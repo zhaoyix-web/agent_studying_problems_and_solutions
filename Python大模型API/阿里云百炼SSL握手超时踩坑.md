@@ -44,17 +44,19 @@ for chunk in completion:
             print("\n" + "=" * 20 + "完整回复" + "=" * 20)
             is_answering = True
         print(delta.content, end="", flush=True)
+```
 
 httpcore.ConnectTimeout: _ssl.c:1018: The handshake operation timed out
 完整堆栈：底层 httpx 发起 HTTPS 请求，SSL 握手阶段连接超时，无法连通阿里云百炼国内接口地址。
 
-3. 根因分析
-Clash Verge 开启全局代理 + 系统代理，系统全局流量全部转发至日本境外节点；
-dashscope.aliyuncs.com 是阿里云国内服务器域名，境外代理转发 HTTPS 握手极易丢包、超时；
-openai Python 库会自动读取系统 HTTP_PROXY/HTTPS_PROXY 环境变量，不会自动跳过国内域名，强制走代理发起请求；
-网页浏览器部分会自动分流国内地址，但 Python 程序无分流逻辑，直接触发连接超时。
-4. 修复方案
-方案 A：临时快速解决
-打开 Clash Verge 面板；
-代理模式从「全局」切换为「直连」，或直接关闭「系统代理」开关；
-重新运行代码，请求不再走境外代理，接口正常连通。
+## 3. 根因分析
+1. Clash Verge 开启全局代理 + 系统代理，系统全局流量全部转发至日本境外节点；
+2. dashscope.aliyuncs.com 是阿里云国内服务器域名，境外代理转发 HTTPS 握手极易丢包、超时；
+3. openai Python 库会自动读取系统 HTTP_PROXY/HTTPS_PROXY 环境变量，不会自动跳过国内域名，强制走代理发起请求；
+4. 网页浏览器会自动分流国内地址，但 Python 程序无智能分流逻辑，最终导致 SSL 握手连接超时。
+
+## 4. 修复方案
+### 临时快速解决
+1. 打开 Clash Verge 面板；
+2. 代理模式从「全局」切换为「直连」，或直接关闭「系统代理」开关；
+3. 重新运行代码，请求不再走境外代理，接口正常连通。
